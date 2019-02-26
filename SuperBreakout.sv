@@ -432,7 +432,7 @@ assign b={videowht,videowht};
 
 
 
-arcade_rotate_fx #(336,240,8) arcade_video
+arcade_rotate_fx #(256,224,8) arcade_video
 (
 	.*,
 
