@@ -40,14 +40,35 @@ port(
 			Lamp2_O		: out	std_logic;
 			Serve_LED_O	: out std_logic;	-- Serve button LED (Active low)
 			Counter_O	: out std_logic;	-- Coin counter output (Active high)
-			Audio_O		: out std_logic;	-- PWM audio, low pass filter is desirable but not really necessary for the simple SFX in this game
+
+			Audio_O		: out std_logic_vector(7 downto 0);	-- PWM audio, low pass filter is desirable but not really necessary for the simple SFX in this game
 			Video_O		: out std_logic;	-- Video output, sum this through a 470R resistor to composite video
-			CompSync_O	: out std_logic); -- Composite sync, sum this through a 1k resistor to composite video
+			CompSync_O	: out std_logic; -- Composite sync, sum this through a 1k resistor to composite video
+			SW1_I			: in std_logic_vector(7 downto 0);
+			
+			
+			hs_O			: out std_logic;
+			vs_O			: out std_logic;
+			hblank_O		: out std_logic;
+
+			clk_12		: in std_logic;
+			clk_6_O		: out std_logic;
+
+			-- signals that carry the ROM data from the MiSTer disk
+			dn_addr        : in  std_logic_vector(15 downto 0);
+			dn_data        : in  std_logic_vector(7 downto 0);
+			dn_wr          : in  std_logic
+			
+			
+
+			
+			);
+
 end super_breakout;
 
 architecture rtl of super_breakout is
 
-signal clk_12			: std_logic;
+--signal clk_12			: std_logic;
 signal clk_6			: std_logic;
 signal phi2				: std_logic;
 
@@ -120,7 +141,7 @@ begin
 --						5				3/5 Balls			(1 - 3 Balls)
 --							6	7	8	Bonus play			(011 - 600 Progressive, 400 Cavity, 600 Double)
 		
-SW2 <= "00101011";
+SW2 <= SW1_I;--"00101011";
   
 
 -- Video mixer
@@ -132,12 +153,7 @@ Reset_h <= (not Reset_n); -- Some components need an active-high reset
 Vblank_O <= Vblank; -- Resets ramp in analog paddle circuit (if used)
 
 -- PLL to generate 12.096 MHz master clock
-PLL: entity work.clk_pll
-port map(
-		inclk0 => Clk_50_I,
-		c0 => clk_12,
-		areset => reset_h
-		);
+
 		
 Vid_sync: entity work.synchronizer
 port map(
@@ -253,5 +269,9 @@ port map(
 		Adr => Adr,
 		Inputs => Inputs
 	);	
-	
+hs_O<= hsync;
+hblank_O <= HBlank;
+vblank_O <= VBlank;
+vs_O <=vsync;
+clk_6_O<=clk_6;	
 end rtl;

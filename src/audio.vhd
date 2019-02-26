@@ -27,7 +27,7 @@ port(
 			Tones_n		: in	std_logic;
 			Display		: in	std_logic_vector(3 downto 0);
 			VCount		: in  std_logic_vector(7 downto 0);
-			Audio_PWM	: out std_logic);
+			Audio_PWM	: out std_logic_vector(7 downto 0));
 end audio;
 
 architecture rtl of audio is
@@ -64,17 +64,17 @@ tone_V8 <= tone_reg(1) and V8;
 tone_V16 <= tone_reg(2) and V16;
 tone_V32 <= tone_reg(3) and V32;
 
-sounds <= tone_V4 & '0' & tone_V8 & '0' & tone_V16 & '0' & tone_V32 & '0';
+audio_pwm <= tone_V4 & '0' & tone_V8 & '0' & tone_V16 & '0' & tone_V32 & '0';
 
-DAC: entity work.deltasigma
-generic map(
-width => 8
-)
-port map(
-	inval => sounds,
-	output => audio_pwm,
-	clk => clk_50,
-	reset => reset
-	);
+--DAC: entity work.deltasigma
+--generic map(
+--width => 8
+--)
+--port map(
+--	inval => sounds,
+--	output => audio_pwm,
+--	clk => clk_50,
+--	reset => reset
+--	);
 
 end rtl;
