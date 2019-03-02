@@ -430,14 +430,50 @@ assign r={videowht,videowht,videowht};
 assign g={videowht,videowht,videowht};
 assign b={videowht,videowht};
 
+/*
+reg ce_pix;
+always @(posedge clk_48) begin
+        reg old_clk;
+
+        old_clk <= clk_12;
+        ce_pix <= old_clk & ~clk_12;
+end
 
 
 arcade_rotate_fx #(256,224,8) arcade_video
 (
 	.*,
 
-	.clk_video(CLK_VIDEO_2),
-	.ce_pix(CLK_VIDEO_2/*ce_vid*/),
+	.clk_video(clk_48),
+	//.ce_pix(clk_12ce_vid),
+
+	.RGB_in({r,g,b}),
+	.HBlank(hblank),
+	.VBlank(vblank),
+	.HSync(hs),
+	.VSync(vs),
+	
+	.fx(status[5:3]),
+	.no_rotate(status[2])
+);
+
+*/
+
+reg ce_pix;
+always @(posedge clk_24) begin
+        reg old_clk;
+
+        old_clk <= CLK_VIDEO_2;
+        ce_pix <= old_clk & ~CLK_VIDEO_2;
+end
+
+
+arcade_rotate_fx #(256,224,8,1) arcade_video
+(
+	.*,
+
+	.clk_video(clk_24),
+	//.ce_pix(clk_12ce_vid),
 
 	.RGB_in({r,g,b}),
 	.HBlank(hblank),
@@ -450,98 +486,20 @@ arcade_rotate_fx #(256,224,8) arcade_video
 );
 
 
-/*
-
-assign HDMI_ARX = status[5] ? 8'd16 : status[4] ? 8'd4 : 8'd1;
-assign HDMI_ARY = status[5] ? 8'd9  : status[4] ? 8'd3 : 8'd1;
-
-wire vbl0;
-
-wire hblank, vblank;
-reg  ce_vid;
-wire hs, vs;
-wire rde, rhs, rvs;
-wire [2:0] r,g;
-wire [1:0] b;
-wire [2:0] rr,rg;
-wire [1:0] rb;
-
-
-assign r={videowht,videowht,videowht};
-assign g={videowht,videowht,videowht};
-assign b={videowht,videowht};
-
-
-assign VGA_CLK  = clk_sys;
-assign VGA_CE   = ce_vid;
-assign VGA_R    = {r,r,r[2:1]};
-assign VGA_G    = {g,g,g[2:1]};
-assign VGA_B    = {b,b,b,b};
-assign VGA_DE   = ~(hblank | vblank);
-assign VGA_HS   = ~hs;
-assign VGA_VS   = ~vs;
-wire clk_hdmi = clk_sys;
-
-assign HDMI_CLK = status[4] ? VGA_CLK: clk_hdmi;
-assign HDMI_CE  = status[4] ? VGA_CE : 1'b1;
-assign HDMI_R   = status[4] ? VGA_R  : {rr,rr,rr[2:1]};
-assign HDMI_G   = status[4] ? VGA_G  : {rg,rg,rg[2:1]};
-assign HDMI_B   = status[4] ? VGA_B  : {rb,rb,rb,rb};
-assign HDMI_DE  = status[4] ? VGA_DE : rde;
-assign HDMI_HS  = status[4] ? VGA_HS : rhs;
-assign HDMI_VS  = status[4] ? VGA_VS : rvs;
-assign HDMI_SL  = status[4] ? 2'd0   : status[9:8];
-
-screen_rotate #(336,240,8) screen_rotate
-(
-	.clk_in(clk_sys),
-	.ce_in(ce_vid),
-	.video_in({r,g,b}),
-	.hblank(hblank),
-	.vblank(vblank),
-
-	.clk_out(clk_hdmi),
-	.video_out({rr,rg,rb}),
-	.hsync(rhs),
-	.vsync(rvs),
-	.de(rde)
-);
-
-
-assign hblank = hbl[8];
-assign vblank = vbl;
-
-
-//assign clk_pix = clk_12;
-assign clk_pix = CLK_VIDEO;
-wire clk_pix;
-wire hbl0;
-reg [8:0] hbl;
-reg vbl;
-always @(posedge clk_sys) begin
-	reg old_pix;
-	old_pix <= clk_pix;
-	ce_vid <= 0;
-	if(old_pix & ~clk_pix) begin
-		ce_vid <= 1;
-		hbl <= (hbl<<1)|hbl0;
-		vbl <= vbl0;
-	end
-end
-
-*/
-
 assign AUDIO_L={audio1,8'b00000000};
 assign AUDIO_R=AUDIO_L;
 assign AUDIO_S = 0;
 wire scrap;
-assign clk_sys=CLK_VIDEO_2;
+assign clk_sys=clk_12;
 pll pll (
 	 .refclk ( CLK_50M   ),
 	 .rst(0),
 	 .locked 		( locked    ),        // PLL is running stable
-	 .outclk_0		( scrap		),        // 12 MHz
-	 .outclk_1		( clk_12		)        // 12 MHz
+    .outclk_0              ( clk_24                ),        // 24 MHz
+         .outclk_1              ( clk_12                ),        // 12 MHz
+         .outclk_2              ( clk_6         ),        // 6 MHz
+         .outclk_3              ( clk_3         ),        // 3 MHz
+         .outclk_4              ( clk_48                )        // 48 MHz
 	 );
 
 endmodule
