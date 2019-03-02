@@ -65,115 +65,6 @@ module emu
 );
 
 
-/*
-module emu
-(
-	//Master input clock
-	input         CLK_50M,
-
-	//Async reset from top-level module.
-	//Can be used as initial reset.
-	input         RESET,
-
-	//Must be passed to hps_io module
-	inout  [44:0] HPS_BUS,
-
-	//Base video clock. Usually equals to CLK_SYS.
-	output        CLK_VIDEO,
-
-	//Multiple resolutions are supported using different CE_PIXEL rates.
-	//Must be based on CLK_VIDEO
-	output        CE_PIXEL,
-
-	//Video aspect ratio for HDMI. Most retro systems have ratio 4:3.
-	output  [7:0] VIDEO_ARX,
-	output  [7:0] VIDEO_ARY,
-
-	output  [7:0] VGA_R,
-	output  [7:0] VGA_G,
-	output  [7:0] VGA_B,
-	output        VGA_HS,
-	output        VGA_VS,
-	output        VGA_DE,    // = ~(VBlank | HBlank)
-	output        VGA_F1,
-	output [1:0]  VGA_SL,
-	//Base video clock. Usually equals to CLK_SYS.
-	output        HDMI_CLK,
-
-	//Multiple resolutions are supported using different HDMI_CE rates.
-	//Must be based on CLK_VIDEO
-	output        HDMI_CE,
-
-	output  [7:0] HDMI_R,
-	output  [7:0] HDMI_G,
-	output  [7:0] HDMI_B,
-	output        HDMI_HS,
-	output        HDMI_VS,
-	output        HDMI_DE,   // = ~(VBlank | HBlank)
-	output  [1:0] HDMI_SL,   // scanlines fx
-
-	//Video aspect ratio for HDMI. Most retro systems have ratio 4:3.
-	output  [7:0] HDMI_ARX,
-	output  [7:0] HDMI_ARY,
-
-
-	output        LED_USER,  // 1 - ON, 0 - OFF.
-
-	// b[1]: 0 - LED status is system status OR'd with b[0]
-	//       1 - LED status is controled solely by b[0]
-	// hint: supply 2'b00 to let the system control the LED.
-	output  [1:0] LED_POWER,
-	output  [1:0] LED_DISK,
-
-	output [15:0] AUDIO_L,
-	output [15:0] AUDIO_R,
-	output        AUDIO_S, // 1 - signed audio samples, 0 - unsigned
-	output  [1:0] AUDIO_MIX, // 0 - no mix, 1 - 25%, 2 - 50%, 3 - 100% (mono)
-	input         TAPE_IN,
-
-	// SD-SPI
-	output        SD_SCK,
-	output        SD_MOSI,
-	input         SD_MISO,
-	output        SD_CS,
-	input         SD_CD,
-
-	//High latency DDR3 RAM interface
-	//Use for non-critical time purposes
-	output        DDRAM_CLK,
-	input         DDRAM_BUSY,
-	output  [7:0] DDRAM_BURSTCNT,
-	output [28:0] DDRAM_ADDR,
-	input  [63:0] DDRAM_DOUT,
-	input         DDRAM_DOUT_READY,
-	output        DDRAM_RD,
-	output [63:0] DDRAM_DIN,
-	output  [7:0] DDRAM_BE,
-	output        DDRAM_WE,
-
-	//SDRAM interface with lower latency
-	output        SDRAM_CLK,
-	output        SDRAM_CKE,
-	output [12:0] SDRAM_A,
-	output  [1:0] SDRAM_BA,
-	inout  [15:0] SDRAM_DQ,
-	output        SDRAM_DQML,
-	output        SDRAM_DQMH,
-	output        SDRAM_nCS,
-	output        SDRAM_nCAS,
-	output        SDRAM_nRAS,
-	output        SDRAM_nWE,
-
-	input         UART_CTS,
-	output        UART_RTS,
-	input         UART_RXD,
-	output        UART_TXD,
-	output        UART_DTR,
-	input         UART_DSR
-);
-*/
-
-//`define SOUND_DBG
 
 
 
@@ -347,11 +238,8 @@ super_breakout super_breakout(
 	.dn_wr(ioctl_wr),
 
 	.Video_O(videowht),
-	//.VideoB_O(videoblk),
 
-	//.Sync_O(compositesync),
 	.Audio_O(audio1),
-	//.Audio2_O(audio2),
 	.Coin1_I(~m_coin),
 	.Coin2_I(~m_coin),
 	
@@ -382,7 +270,7 @@ wire [3:0] videor;
 ///////////////////////////////////////////////////
 //wire clk_sys, clk_ram, clk_ram2, clk_pixel, locked;
 wire clk_sys,locked;
-wire clk_12,CLK_VIDEO_2;
+wire clk_48,clk_24,clk_12,clk_6,clk_3,CLK_VIDEO_2;
 
 
 
@@ -390,33 +278,6 @@ wire hs,vs,hblank,vblank,hbl0,vbl0;
 
 assign hblank=hbl0;
 assign vblank=vbl0;
-//----
-/*
-assign VGA_HS=hs;
-assign VGA_VS=vs;
-
-assign HDMI_ARX = 4;
-assign HDMI_ARY = 3;
-
-assign VGA_CLK  = CLK_VIDEO_2;
-assign VGA_CE   = 1;
-
-assign VGA_R={videowht,videowht,videowht,videowht,videowht,videowht,videowht,videowht};
-assign VGA_G={videowht,videowht,videowht,videowht,videowht,videowht,videowht,videowht};
-assign VGA_B={videowht,videowht,videowht,videowht,videowht,videowht,videowht,videowht};
-
-assign VGA_DE=~(vblank | hblank);
-
-assign HDMI_CLK =  VGA_CLK;
-assign HDMI_CE  =  VGA_CE ;
-assign HDMI_R   = VGA_R  ;
-assign HDMI_G   =VGA_G ;
-assign HDMI_B   =  VGA_B ;
-assign HDMI_DE  = VGA_DE ;
-assign HDMI_HS  =  VGA_HS;
-assign HDMI_VS  = VGA_VS ;
-assign HDMI_SL  =  2'd0  ;
-*/
 
 
 
@@ -473,7 +334,7 @@ arcade_rotate_fx #(256,224,8,1) arcade_video
 	.*,
 
 	.clk_video(clk_24),
-	//.ce_pix(clk_12ce_vid),
+	//.ce_pix(CLK_VIDEO_2),
 
 	.RGB_in({r,g,b}),
 	.HBlank(hblank),
@@ -491,15 +352,16 @@ assign AUDIO_R=AUDIO_L;
 assign AUDIO_S = 0;
 wire scrap;
 assign clk_sys=clk_12;
+
 pll pll (
-	 .refclk ( CLK_50M   ),
-	 .rst(0),
-	 .locked 		( locked    ),        // PLL is running stable
-    .outclk_0              ( clk_24                ),        // 24 MHz
-         .outclk_1              ( clk_12                ),        // 12 MHz
-         .outclk_2              ( clk_6         ),        // 6 MHz
-         .outclk_3              ( clk_3         ),        // 3 MHz
-         .outclk_4              ( clk_48                )        // 48 MHz
+	.refclk ( CLK_50M   ),
+	.rst(0),
+	.locked 		( locked    ),        // PLL is running stable
+	.outclk_0	( clk_24	),        // 24 MHz
+	.outclk_1	( clk_12	),        // 12 MHz
+	.outclk_2	( clk_6	),        // 6 MHz
+	.outclk_3	( clk_3	),        // 3 MHz
+	.outclk_4	( clk_48	)        // 48 MHz
 	 );
 
 endmodule
