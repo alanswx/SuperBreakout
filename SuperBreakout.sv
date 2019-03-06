@@ -84,6 +84,7 @@ localparam CONF_STR = {
 	"OC,Balls,3,5;",
 	"O68,Bonus,200,400,600,900,1200,1600,2000,None;",
 	"OD,Test,Off,On;",
+	"OE,Color,On,Off;",
 	"-;",
 	"R0,Reset;",
 	"J1,Relase,Select,Start 1P,Start 2P;",
@@ -143,11 +144,25 @@ always @(posedge clk_sys) begin
 //			'hX72: btn_down        <= pressed; // down
 			'hX6B: btn_left        <= pressed; // left
 			'hX74: btn_right       <= pressed; // right
-			'h029: btn_gas         <= pressed; // space
-			'h014: btn_gas         <= pressed; // ctrl
+			'h029: btn_serve         <= pressed; // space
+			'h014: btn_serve         <= pressed; // ctrl
 
 			'h005: btn_one_player  <= pressed; // F1
 			'h006: btn_two_players <= pressed; // F2
+			
+			// JPAC/IPAC/MAME Style Codes
+			'h016: btn_start_1     <= pressed; // 1
+			'h01E: btn_start_2     <= pressed; // 2
+			'h02E: btn_coin_1      <= pressed; // 5
+			'h036: btn_coin_2      <= pressed; // 6
+//                        'h02D: btn_up_2        <= pressed; // R
+//                        'h02B: btn_down_2      <= pressed; // F
+			'h023: btn_left_2      <= pressed; // D
+			'h034: btn_right_2     <= pressed; // G
+			'h01C: btn_serve_2     <= pressed; // A
+
+			
+			
 		endcase
 	end
 end
@@ -156,13 +171,22 @@ end
 //reg btn_down  = 0;
 reg btn_right = 0;
 reg btn_left  = 0;
-reg btn_gas  = 0;
+reg btn_serve  = 0;
 reg btn_one_player  = 0;
 reg btn_two_players = 0;
 
+reg btn_start_1=0;
+reg btn_start_2=0;
+reg btn_coin_1=0;
+reg btn_coin_2=0;
+reg btn_left_2=0;
+reg btn_right_2=0;
+reg btn_serve_2=0;
+
+
 wire m_left			=  btn_left  | joy0[1];
 wire m_right		=  btn_right | joy0[0];
-wire m_serve			= btn_gas| joy0[4]|joy1[4];
+wire m_serve			= btn_serve| joy0[4]|joy1[4];
 wire m_select1		=  joy0[5];
 
 
@@ -171,8 +195,8 @@ wire m_right1  	=  joy1[0];
 wire m_select2		=  joy1[5];
 
 
-wire m_start1 = btn_one_player  | joy0[8] | joy1[8];
-wire m_start2 = btn_two_players | joy0[9] | joy1[9];
+wire m_start1 = btn_one_player  | joy0[8] | joy1[8]| btn_start_1;
+wire m_start2 = btn_two_players | joy0[9] | joy1[9]| btn_start_2;
 wire m_coin   = m_start1 | m_start2;
 
 
@@ -238,10 +262,11 @@ super_breakout super_breakout(
 	.dn_wr(ioctl_wr),
 
 	.Video_O(videowht),
+	.Video_RGB(videorgb),
 
 	.Audio_O(audio1),
-	.Coin1_I(~m_coin),
-	.Coin2_I(~m_coin),
+	.Coin1_I(~(m_coin|btn_coin_1)),
+	.Coin2_I(~(m_coin|btn_coin_2)),
 	
 	.Start1_I(~m_start1),
 	.Start2_I(~m_start2),
@@ -284,7 +309,7 @@ assign vblank=vbl0;
 assign HDMI_ARX = status[1] ? 8'd16 : status[2] ? 8'd4 : 8'd1;
 assign HDMI_ARY = status[1] ? 8'd9  : status[2] ? 8'd3 : 8'd1;
 
-
+wire [7:0] videorgb;
 wire [2:0] r,g;
 wire [1:0] b;
 assign r={videowht,videowht,videowht};
@@ -328,15 +353,16 @@ always @(posedge clk_24) begin
         ce_pix <= old_clk & ~CLK_VIDEO_2;
 end
 
-
-arcade_rotate_fx #(256,224,8,1) arcade_video
+// not sure if 298 is quite right
+//arcade_rotate_fx #(256,224,8,1) arcade_video
+arcade_rotate_fx #(298,224,8,1) arcade_video
 (
 	.*,
 
 	.clk_video(clk_24),
 	//.ce_pix(CLK_VIDEO_2),
-
-	.RGB_in({r,g,b}),
+	.RGB_in(~status[14]?videorgb:{r,g,b}),
+//	.RGB_in({r,g,b}),
 	.HBlank(hblank),
 	.VBlank(vblank),
 	.HSync(hs),

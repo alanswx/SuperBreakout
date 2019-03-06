@@ -43,6 +43,7 @@ port(
 
 			Audio_O		: out std_logic_vector(7 downto 0);	-- PWM audio, low pass filter is desirable but not really necessary for the simple SFX in this game
 			Video_O		: out std_logic;	-- Video output, sum this through a 470R resistor to composite video
+			Video_RGB	: out std_logic_vector(7 downto 0);
 			CompSync_O	: out std_logic; -- Composite sync, sum this through a 1k resistor to composite video
 			SW1_I			: in std_logic_vector(7 downto 0);
 			
@@ -83,6 +84,7 @@ signal Inputs			: std_logic_vector(1 downto 0);
 
 -- Video timing signals
 signal Hcount		   : std_logic_vector(8 downto 0) := (others => '0');
+signal hcolor		   : std_logic_vector(7 downto 0);
 signal H256				: std_logic;
 signal H256_s			: std_logic;
 signal H256_n			: std_logic;
@@ -98,6 +100,7 @@ signal H2				: std_logic;
 signal H1				: std_logic;
 
 signal Vcount  		: std_logic_vector(7 downto 0) := (others => '0');
+signal Video			: std_logic;
 signal V128				: std_logic;
 signal V64				: std_logic;
 signal V32				: std_logic;
@@ -148,6 +151,55 @@ SW2 <= SW1_I;--"00101011";
 Video_O <= not(Playfield_n and Ball1_n and Ball2_n and Ball3_n);
 CompSync_O <= CompSync_n_s;
 
+-- r 3  g 3  b 2
+-- https://github.com/mamedev/mame/blob/master/src/mame/layout/sbrkout.lay
+process (hcolor,Playfield_n , Ball1_n , Ball2_n , Ball3_n)
+begin
+Video <=  not(Playfield_n and Ball1_n and Ball2_n and Ball3_n);
+if ( (unsigned(hcolor) >=0 ) and (unsigned(hcolor) <= 40) ) then
+	if (Video='1') then
+		Video_RGB  <=  "10011011";
+	else
+		Video_RGB  <=  "00000000";
+	end if;
+elsif  (( unsigned(hcolor)  >=41 ) and (unsigned(hcolor) <=72)) then
+	if (Video='1') then
+		Video_RGB  <=  "11110010";
+	else
+		Video_RGB  <=  "00000000";
+	end if;
+elsif  (( unsigned(hcolor)  >=73 ) and (unsigned(hcolor) <=105)) then
+	if (Video='1') then
+		Video_RGB  <=  "00111110";
+	else
+		Video_RGB  <=  "00000000";
+	end if;
+elsif  ((unsigned(hcolor)  >=106 ) and (unsigned(hcolor) <=231)) then
+	if (Video='1') then
+		Video_RGB  <=  "10011011";
+	else
+		Video_RGB  <=  "00000000";
+	end if;
+elsif  (( unsigned(hcolor)  >=232) and (unsigned(hcolor) <=240)) then
+	if (Video='1') then
+		Video_RGB  <=  "10010011";
+	else
+		Video_RGB  <=  "00000000";
+	end if;
+elsif  (( unsigned(hcolor)  >=241) and (unsigned(hcolor) <=256)) then
+	if (Video='1') then
+		Video_RGB  <=  "11111111";
+	else
+		Video_RGB  <=  "00000000";
+	end if;
+else
+	if (Video='1') then
+		Video_RGB  <=  "11111111";
+	else
+		Video_RGB  <=  "00000000";
+	end if;
+end if;
+end process;
 
 Reset_h <= (not Reset_n); -- Some components need an active-high reset
 Vblank_O <= Vblank; -- Resets ramp in analog paddle circuit (if used)
