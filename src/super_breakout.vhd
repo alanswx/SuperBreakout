@@ -136,7 +136,43 @@ signal Mask2_n			: std_logic;
 signal Sense1			: std_logic;
 signal Sense2			: std_logic;
 
+-- logic to load roms from disk
+signal rom1_cs   			: std_logic;
+signal rom2_cs   			: std_logic;
+signal rom3_cs   			: std_logic;
+signal rom4_cs   			: std_logic;
+signal rom_LSB_cs   		: std_logic;
+signal rom_MSB_cs   		: std_logic;
+signal rom_car_k6_cs   	: std_logic;
+signal rom_car_j6_cs   	: std_logic;
+signal rom_sync_prom_cs : std_logic;
+signal rom_32_cs   		: std_logic;
+
 begin
+
+--033453.c1	2048	0			 00 0000 0000 0000
+--033454.d1	2048	2048		 00 1000 00000000
+--033455.e1	2048	4096		 01 0000 00000000
+--blank	2048	6144			 01 1000 00000000
+--033280.p4	512	8192		 10 0000 00000000
+--033281.r4	512	8704		 10 0010 00000000
+--006400.m2	256	9216		 10 0100 00000000
+--006401.e2	32	9472			 10 0101 00000000
+
+
+rom2_cs <= '1' when dn_addr(13 downto 11) = "000"     else '0';
+rom3_cs <= '1' when dn_addr(13 downto 11) = "001"     else '0';
+rom4_cs <= '1' when dn_addr(13 downto 11) = "010"     else '0';
+rom_LSB_cs <= '1' when dn_addr(13 downto 9) =  "10000"   else '0';
+rom_MSB_cs <= '1' when dn_addr(13 downto 9) =  "10001"   else '0';
+rom_sync_prom_cs <= '1' when dn_addr(13 downto 8) =  "100100"   else '0';
+rom_32_cs <= '1' when dn_addr(13 downto 8) =  "100101"   else '0';
+
+
+
+
+
+
 -- Configuration DIP switches, these can be brought out to external switches if desired
 -- See Super Breakout manual page 13 for complete information. Active low (0 = On, 1 = Off)
 --    1 	2							Language				(00 - English)
@@ -153,53 +189,117 @@ CompSync_O <= CompSync_n_s;
 
 -- r 3  g 3  b 2
 -- https://github.com/mamedev/mame/blob/master/src/mame/layout/sbrkout.lay
+
 process (hcolor,Playfield_n , Ball1_n , Ball2_n , Ball3_n)
 begin
 Video <=  not(Playfield_n and Ball1_n and Ball2_n and Ball3_n);
-if ( (unsigned(hcolor) >=0 ) and (unsigned(hcolor) <= 40) ) then
-	if (Video='1') then
-		Video_RGB  <=  "10011011";
-	else
-		Video_RGB  <=  "00000000";
-	end if;
-elsif  (( unsigned(hcolor)  >=41 ) and (unsigned(hcolor) <=72)) then
-	if (Video='1') then
-		Video_RGB  <=  "11110010";
-	else
-		Video_RGB  <=  "00000000";
-	end if;
-elsif  (( unsigned(hcolor)  >=73 ) and (unsigned(hcolor) <=105)) then
-	if (Video='1') then
-		Video_RGB  <=  "00111110";
-	else
-		Video_RGB  <=  "00000000";
-	end if;
-elsif  ((unsigned(hcolor)  >=106 ) and (unsigned(hcolor) <=231)) then
-	if (Video='1') then
-		Video_RGB  <=  "10011011";
-	else
-		Video_RGB  <=  "00000000";
-	end if;
-elsif  (( unsigned(hcolor)  >=232) and (unsigned(hcolor) <=240)) then
-	if (Video='1') then
-		Video_RGB  <=  "10010011";
-	else
-		Video_RGB  <=  "00000000";
-	end if;
-elsif  (( unsigned(hcolor)  >=241) and (unsigned(hcolor) <=256)) then
-	if (Video='1') then
-		Video_RGB  <=  "11111111";
-	else
-		Video_RGB  <=  "00000000";
-	end if;
+-- check for the wrap around (126)
+if  ((unsigned(hcolor)  >=121 ) and (unsigned(hcolor) <=128) and (hcount(8)='0')) then
+        if (Video='1') then
+                Video_RGB  <=  "01001011";
+        else
+                Video_RGB  <=  "00000000";
+        end if;
+-- Blue Bar / Top
+elsif ( (unsigned(hcolor) >=0 ) and (unsigned(hcolor) <= 33) ) then
+        if (Video='1') then
+                Video_RGB  <=  "01001011";
+        else
+                Video_RGB  <=  "00000000";
+        end if;
+-- Orange Bar
+elsif  (( unsigned(hcolor)  >=34 ) and (unsigned(hcolor) <=65)) then
+        if (Video='1') then
+                Video_RGB  <=  "11110000";
+        else
+                Video_RGB  <=  "00000000";
+        end if;
+-- Green Bar
+elsif  (( unsigned(hcolor)  >=66 ) and (unsigned(hcolor) <=97)) then
+        if (Video='1') then
+                Video_RGB  <=  "01011001";
+        else
+                Video_RGB  <=  "00000000";
+        end if;
+-- Yellow Bar
+elsif  ((unsigned(hcolor)  >=98 ) and (unsigned(hcolor) <=129)) then
+        if (Video='1') then
+                Video_RGB  <=  "11111101";
+        else
+                Video_RGB  <=  "00000000";
+        end if;
+-- Blue for paddle line
+elsif  (( unsigned(hcolor)  >=224) and (unsigned(hcolor) <=230)) then
+        if (Video='1') then
+         Video_RGB  <=  "01001011";
+        else
+                Video_RGB  <=  "00000000";
+        end if;
+--elsif  (( unsigned(hcolor)  >=256) and (unsigned(hcolor) <=264)) then
+--      if (Video='1') then
+--              Video_RGB  <=  "11111111";
+--              Video_RGB  <=  "11100000";
+--      else
+--              Video_RGB  <=  "00000000";
+--      end if;
 else
-	if (Video='1') then
-		Video_RGB  <=  "11111111";
-	else
-		Video_RGB  <=  "00000000";
-	end if;
+        if (Video='1') then
+                Video_RGB  <=  "11111111";
+        else
+                Video_RGB  <=  "00000000";
+        end if;
 end if;
 end process;
+
+
+--
+--process (hcolor,Playfield_n , Ball1_n , Ball2_n , Ball3_n)
+--begin
+--Video <=  not(Playfield_n and Ball1_n and Ball2_n and Ball3_n);
+--if ( (unsigned(hcolor) >=0 ) and (unsigned(hcolor) <= 40) ) then
+--	if (Video='1') then
+--		Video_RGB  <=  "10011011";
+--	else
+--		Video_RGB  <=  "00000000";
+--	end if;
+--elsif  (( unsigned(hcolor)  >=41 ) and (unsigned(hcolor) <=72)) then
+--	if (Video='1') then
+--		Video_RGB  <=  "11110010";
+--	else
+--		Video_RGB  <=  "00000000";
+--	end if;
+--elsif  (( unsigned(hcolor)  >=73 ) and (unsigned(hcolor) <=105)) then
+--	if (Video='1') then
+--		Video_RGB  <=  "00111110";
+--	else
+--		Video_RGB  <=  "00000000";
+--	end if;
+--elsif  ((unsigned(hcolor)  >=106 ) and (unsigned(hcolor) <=231)) then
+--	if (Video='1') then
+--		Video_RGB  <=  "10011011";
+--	else
+--		Video_RGB  <=  "00000000";
+--	end if;
+--elsif  (( unsigned(hcolor)  >=232) and (unsigned(hcolor) <=240)) then
+--	if (Video='1') then
+--		Video_RGB  <=  "10010011";
+--	else
+--		Video_RGB  <=  "00000000";
+--	end if;
+--elsif  (( unsigned(hcolor)  >=241) and (unsigned(hcolor) <=256)) then
+--	if (Video='1') then
+--		Video_RGB  <=  "11111111";
+--	else
+--		Video_RGB  <=  "00000000";
+--	end if;
+--else
+--	if (Video='1') then
+--		Video_RGB  <=  "11111111";
+--	else
+--		Video_RGB  <=  "00000000";
+--	end if;
+--end if;
+--end process;
 
 Reset_h <= (not Reset_n); -- Some components need an active-high reset
 Vblank_O <= Vblank; -- Resets ramp in analog paddle circuit (if used)
@@ -213,18 +313,24 @@ port map(
 		clk_6 => clk_6,
 		hcount => hcount,
 		vcount => vcount,
+		hcolor => hcolor,
 		hsync => hsync,
 		hblank => hblank,
 		vblank_s => vblank_s,
 		vblank_n_s => vblank_n_s,
 		vblank => vblank,
 		vsync => vsync,
-		vreset => vreset
+		vreset => vreset,
+		dn_wr => dn_wr,
+		dn_addr=>dn_addr,
+		dn_data=>dn_data,
+		rom_sync_prom_cs=>rom_sync_prom_cs
 		);		
 
 PF: entity work.playfield
 port map(
 		Clk6 => clk_6,
+		Clk12 => clk_12,
 		Display => Display,
 		HCount => HCount,
 		VCount => VCount,
@@ -236,7 +342,14 @@ port map(
 		VSync => VSync,
 		CompSync_n_s => CompSync_n_s,
 		CompBlank_s => CompBlank_s,
-		Playfield_n => Playfield_n
+		Playfield_n => Playfield_n,
+
+		dn_wr => dn_wr,
+		dn_addr=>dn_addr,
+		dn_data=>dn_data,
+		
+		rom_LSB_cs=>rom_LSB_cs,
+		rom_MSB_cs=>rom_MSB_cs
 		);
 	
 Ball_motion: entity work.motion
@@ -291,7 +404,18 @@ port map(
 		Phi2_o => Phi2,
 		Display => Display,
 		IO_Adr => Adr,
-		Inputs => Inputs
+		Inputs => Inputs,
+		
+		dn_wr => dn_wr,
+		dn_addr=>dn_addr,
+		dn_data=>dn_data,
+		
+		rom2_cs=>rom2_cs,
+		rom3_cs=>rom3_cs,
+		rom4_cs=>rom4_cs,
+		rom_32_cs=>rom_32_cs
+
+		
 		);
 	
 Input_Output: entity work.IO

@@ -79,7 +79,7 @@ localparam CONF_STR = {
 	"O1,Aspect Ratio,Original,Wide;",
 	"O2,Orientation,Vert,Horz;",
 	"O35,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%,CRT 75%;",  
-
+	"-;",
 	"OAB,Language,English,German,French,Spanish;",
 	"OC,Balls,3,5;",
 	"O68,Bonus,200,400,600,900,1200,1600,2000,None;",
@@ -87,7 +87,7 @@ localparam CONF_STR = {
 	"OE,Color,On,Off;",
 	"-;",
 	"R0,Reset;",
-	"J1,Relase,Select,Start 1P,Start 2P;",
+	"J1,Release,Select,Start 1P,Start 2P;",
 	"V,v",`BUILD_DATE
 };
 
@@ -186,17 +186,17 @@ reg btn_serve_2=0;
 
 wire m_left			=  btn_left  | joy0[1];
 wire m_right		=  btn_right | joy0[0];
-wire m_serve			= btn_serve| joy0[4]|joy1[4];
-wire m_select1		=  joy0[5];
+wire m_serve			= btn_serve_2|btn_serve| joy0[4]|joy1[4];
+wire m_select		=  joy0[5];
 
 
-wire m_left1   	=	joy1[1];
-wire m_right1  	=  joy1[0];
-wire m_select2		=  joy1[5];
+wire m_left_2   	=	btn_left_2|joy1[1];
+wire m_right_2  	=  btn_right_2| joy1[0];
+wire m_select_2		=  joy1[5];
 
 
-wire m_start1 = btn_one_player  | joy0[8] | joy1[8]| btn_start_1;
-wire m_start2 = btn_two_players | joy0[9] | joy1[9]| btn_start_2;
+wire m_start1 = btn_one_player  | joy0[8] | joy1[8];
+wire m_start2 = btn_two_players | joy0[9] | joy1[9];
 wire m_coin   = m_start1 | m_start2;
 
 
@@ -238,8 +238,8 @@ joy2quad steerjoy2quad1
 	//.clkdiv('d22500),
 	.clkdiv('d5500),
 	
-	.right(m_right1),
-	.left(m_left1),
+	.right(m_right_2),
+	.left(m_left_2),
 	
 	.steer(steer1)
 );
@@ -268,12 +268,12 @@ super_breakout super_breakout(
 	.Coin1_I(~(m_coin|btn_coin_1)),
 	.Coin2_I(~(m_coin|btn_coin_2)),
 	
-	.Start1_I(~m_start1),
-	.Start2_I(~m_start2),
+	.Start1_I(~(m_start1 | btn_start_1)),
+	.Start2_I(~(m_start2 | btn_start_2)),
 	
 	.Serve_I(~m_serve),
-	.Select1_I(~m_select1),
-	.Select2_I(~m_select2),
+	.Select1_I(~m_select),
+	.Select2_I(~m_select_2),
 	.Slam_I(1),
 	.Test_I	(~status[13]),
 	.Enc_A(steer0[1]),
@@ -306,8 +306,8 @@ assign vblank=vbl0;
 
 
 
-assign HDMI_ARX = status[1] ? 8'd16 : status[2] ? 8'd4 : 8'd1;
-assign HDMI_ARY = status[1] ? 8'd9  : status[2] ? 8'd3 : 8'd1;
+assign HDMI_ARX = status[1] ? 8'd16 : status[2] ? 8'd4 : 8'd3;
+assign HDMI_ARY = status[1] ? 8'd9  : status[2] ? 8'd3 : 8'd4;
 
 wire [7:0] videorgb;
 wire [2:0] r,g;
@@ -355,7 +355,8 @@ end
 
 // not sure if 298 is quite right
 //arcade_rotate_fx #(256,224,8,1) arcade_video
-arcade_rotate_fx #(298,224,8,1) arcade_video
+//arcade_rotate_fx #(298,224,8,1) arcade_video
+arcade_rotate_fx #(320,240,8,1) arcade_video
 (
 	.*,
 
